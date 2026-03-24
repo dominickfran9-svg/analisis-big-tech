@@ -3,3 +3,5 @@ yfinance
 plotly
 numpy
 scipy
+matplotlib
+scikit-learn
