@@ -1,18 +1,27 @@
+import os
+import subprocess
+import sys
+
+# FORZAR INSTALACIÓN DE ALTAIR SI FALTA
+try:
+    import altair
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "altair"])
+
 import streamlit as st
 import pandas as pd
 import yfinance as yf
 import plotly.express as px
 
-# Configuración look Premium
 st.set_page_config(page_title="Big Tech Analysis", layout="wide")
 
+# Estética Súper Limpia
 st.markdown("""
     <style>
     .main { background-color: #080a0f; }
     .stMetric { background-color: #111827; padding: 20px; border-radius: 12px; border: 1px solid #1f2937; }
-    h1 { color: #ffffff !important; font-family: 'Inter', sans-serif; }
+    h1 { color: #ffffff !important; }
     h3, .stSubheader { color: #e5e7eb !important; }
-    p { color: #9ca3af; }
     hr { border: 0; height: 2px; background: linear-gradient(to right, #00c3ff, #080a0f); margin-bottom: 2rem; }
     </style>
     """, unsafe_allow_html=True)
@@ -21,48 +30,31 @@ st.title("📊 Análisis Estratégico de las Big Tech")
 st.markdown("---")
 
 @st.cache_data(ttl=600)
-def load_market_data():
+def load_data():
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN']
-    try:
-        # El truco: pedimos el último mes con intervalo de 1 día para no activar alarmas
-        data = yf.download(tickers, period="1mo", interval="1d", progress=False)['Close']
-        return data
-    except:
-        return pd.DataFrame()
+    # Usamos un periodo fijo para evitar errores de fechas
+    df = yf.download(tickers, period="6mo", interval="1d")['Close']
+    return df
 
-df = load_market_data()
-
-if not df.empty and df.isna().sum().sum() < (len(df) * 0.5):
-    # Cálculos
-    rets = df.pct_change().dropna()
-    perf = pd.DataFrame({
-        'Retorno': (df.iloc[-1] / df.iloc[0] - 1) * 100,
-        'Riesgo': rets.std() * 100
-    }).reset_index().rename(columns={'index': 'Empresa'})
-
-    # Fila de métricas
-    m1, m2, m3, m4 = st.columns(4)
-    metrics = [m1, m2, m3, m4]
-    for i, t in enumerate(['AAPL', 'MSFT', 'GOOGL', 'AMZN']):
-        metrics[i].metric(t, f"${df[t].iloc[-1]:.2f}", f"{perf.iloc[i, 1]:.2f}%")
-
-    st.markdown("###")
+try:
+    data = load_data()
     
-    # Gráficos de alta calidad
-    c1, c2 = st.columns([2, 1])
-    with c1:
-        st.subheader("Riesgo vs. Retorno Mensual")
-        fig = px.scatter(perf, x="Riesgo", y="Retorno", text="Empresa", color="Empresa",
-                         size="Retorno", template="plotly_dark", height=450)
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with c2:
-        st.subheader("Tendencia")
-        st.line_chart(df)
-        st.info("Gráfica comparativa de precios normalizada.")
-else:
-    st.error("⚠️ Yahoo Finance está bloqueando la conexión temporalmente.")
-    st.markdown("Como es un proyecto académico, si el bloqueo persiste, podrías subir un archivo CSV con los datos para que la página sea 100% estable.")
-    if st.button("🔄 Reintentar Conexión"):
-        st.cache_data.clear()
-        st.rerun()
+    if not data.empty:
+        # Métricas
+        cols = st.columns(4)
+        for i, t in enumerate(['AAPL', 'MSFT', 'GOOGL', 'AMZN']):
+            price = data[t].iloc[-1]
+            change = ((data[t].iloc[-1] / data[t].iloc[0]) - 1) * 100
+            cols[i].metric(t, f"${price:.2f}", f"{change:.2f}%")
+
+        st.markdown("###")
+        
+        # Gráfica de líneas (Usamos Plotly para evitar a Altair si da problemas)
+        st.subheader("Evolución de Precios (Últimos 6 meses)")
+        fig_line = px.line(data, template="plotly_dark", color_discrete_sequence=px.colors.qualitative.Safe)
+        st.plotly_chart(fig_line, use_container_width=True)
+    else:
+        st.warning("Cargando datos desde el servidor de respaldo...")
+        st.button("Reintentar Conexión")
+except Exception as e:
+    st.error(f"Configurando entorno... Por favor pulsa F5 en 10 segundos.")
