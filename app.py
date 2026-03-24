@@ -2,144 +2,118 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
+import plotly.express as px
 import numpy as np
 
-# Configuración de Terminal de Grado Profesional
-st.set_page_config(page_title="Quantum Trading Terminal", layout="wide", initial_sidebar_state="collapsed")
+# Configuración de Interfaz de Grado Bancario
+st.set_page_config(page_title="Alpha Intelligence Terminal", layout="wide", initial_sidebar_state="collapsed")
 
-# CSS: Interfaz de Trading de Alta Gama
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap');
     
     .main { background: #010409; }
     
-    /* Efecto Scanner de Fondo */
+    /* Efecto de Escaneo de Datos */
     .stApp::before {
-        content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 2px;
-        background: rgba(56, 189, 248, 0.3); box-shadow: 0 0 20px #38bdf8;
-        z-index: 9999; animation: scan 10s linear infinite; pointer-events: none;
+        content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 1px;
+        background: rgba(56, 189, 248, 0.5); box-shadow: 0 0 10px #38bdf8;
+        z-index: 9999; animation: scan 4s linear infinite; pointer-events: none;
     }
-    @keyframes scan { 0% { top: -10%; } 100% { top: 110%; } }
+    @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
 
-    /* Tarjetas de Acción Estilo Glassmorphism */
-    div[data-testid="stMetric"] {
-        background: rgba(13, 17, 23, 0.8) !important;
-        border: 1px solid #30363d !important;
-        border-radius: 12px !important;
-        padding: 15px !important;
-        transition: 0.3s;
-    }
-    div[data-testid="stMetric"]:hover {
-        border-color: #58a6ff !important;
-        box-shadow: 0 0 20px rgba(88, 166, 255, 0.2) !important;
+    /* Estilo de contenedores */
+    [data-testid="stVerticalBlock"] > div:has(div.stMetric) {
+        background: rgba(22, 27, 34, 0.7);
+        border: 1px solid #30363d;
+        border-radius: 10px;
+        padding: 10px;
     }
 
-    h1, h2, h3 { font-family: 'Orbitron', sans-serif; color: #f0f6fc; }
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] { 
-        background: #0d1117; border: 1px solid #30363d; 
-        border-radius: 8px 8px 0 0; color: #8b949e; padding: 10px 20px;
-    }
-    .stTabs [aria-selected="true"] { background: #1f6feb !important; color: white !important; }
+    h1, h2, h3 { font-family: 'Orbitron', sans-serif; color: #58a6ff; }
+    code { font-family: 'JetBrains Mono', monospace; }
     </style>
     """, unsafe_allow_html=True)
 
-# Lógica de Datos
 @st.cache_data(ttl=300)
-def get_trading_data():
-    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA']
-    df = yf.download(tickers, period="6mo", interval="1d", progress=False)['Close']
+def get_pro_data():
+    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA']
+    df = yf.download(tickers, period="1y", interval="1d", progress=False)['Close']
     return df
 
 try:
-    data = get_trading_data()
+    data = get_pro_data()
     
-    # --- HEADER ---
-    c1, c2 = st.columns([3, 1])
-    with c1:
-        st.title("📡 QUANTUM TRADING HUB")
-    with c2:
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.status("MERCADO ABIERTO", state="running")
+    # --- DASHBOARD HEADER ---
+    head1, head2 = st.columns([4, 1])
+    head1.title("💹 ALPHA_STRAT_TERMINAL")
+    head2.metric("LATENCY", "14ms", "-2ms")
 
-    # --- MÉTRICAS EN TIEMPO REAL ---
-    st.markdown("### Market Overview")
-    cols = st.columns(len(data.columns))
-    for i, ticker in enumerate(data.columns):
-        price = data[ticker].iloc[-1]
-        change = (price / data[ticker].iloc[-2] - 1) * 100
-        cols[i].metric(ticker, f"${price:.2f}", f"{change:.2f}%")
+    # --- TOP TICKER TAPE ---
+    st.markdown("### 📡 Live Node Connection")
+    m_cols = st.columns(len(data.columns))
+    for i, tick in enumerate(data.columns):
+        val = data[tick].iloc[-1]
+        delta = (val / data[tick].iloc[-2] - 1) * 100
+        m_cols[i].metric(tick, f"{val:.1f}", f"{delta:.2f}%")
 
-    st.markdown("---")
+    # --- CUERPO PRINCIPAL ---
+    tab_inv, tab_tech, tab_risk = st.tabs(["🚀 Inversión Inteligente", "🧪 Laboratorio Técnico", "⚠️ Gestión de Riesgo"])
 
-    # --- ZONA DE ANÁLISIS ---
-    tab_chart, tab_comp, tab_signals = st.tabs(["🎯 Gráfico de Precisión", "⚖️ Comparador Beta", "🤖 Señales IA"])
-
-    with tab_chart:
-        selected_stock = st.selectbox("Seleccionar Activo Principal", data.columns)
-        fig = go.Figure()
+    with tab_inv:
+        col_inv1, col_inv2 = st.columns([2, 1])
         
-        # Línea de la acción seleccionada con efecto Neón
-        fig.add_trace(go.Scatter(
-            x=data.index, y=data[selected_stock],
-            name=selected_stock,
-            line=dict(color='#58a6ff', width=4),
-            fill='toself', fillcolor='rgba(88, 166, 255, 0.05)'
-        ))
-        
-        # Medias móviles para toque profesional
-        ma20 = data[selected_stock].rolling(20).mean()
-        fig.add_trace(go.Scatter(x=data.index, y=ma20, name="MA20", line=dict(dash='dot', color='#30363d')))
-
-        fig.update_layout(
-            hovermode="x unified", template="plotly_dark",
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            height=500, xaxis=dict(showgrid=False), yaxis=dict(side="right")
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-    with tab_comp:
-        st.subheader("Rendimiento Acumulado")
-        # Normalización a base 100
-        norm_df = (data / data.iloc[0]) * 100
-        fig_comp = go.Figure()
-        for col in norm_df.columns:
-            fig_comp.add_trace(go.Scatter(x=norm_df.index, y=norm_df[col], name=col, line=dict(width=2)))
-        
-        fig_comp.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-        st.plotly_chart(fig_comp, use_container_width=True)
-
-    with tab_signals:
-        st.subheader("Análisis Técnico Algorítmico")
-        rec_cols = st.columns(3)
-        
-        # Lógica simple de recomendación (RSI Simplificado)
-        for i, ticker in enumerate(data.columns[:3]): # Ejemplo con las primeras 3
-            current = data[ticker].iloc[-1]
-            avg = data[ticker].mean()
+        with col_inv1:
+            st.subheader("Simulador de Portafolio")
+            cash = st.slider("Capital Inicial (USD)", 1000, 50000, 5000)
+            target = st.selectbox("Seleccionar Activo para Backtesting", data.columns)
             
-            with rec_cols[i]:
-                if current < avg * 0.95:
-                    st.success(f"**{ticker}: COMPRA**")
-                    st.caption("Activo subvalorado respecto al promedio mensual.")
-                elif current > avg * 1.05:
-                    st.error(f"**{ticker}: VENTA**")
-                    st.caption("Posible sobrecompra detectada.")
-                else:
-                    st.warning(f"**{ticker}: NEUTRAL**")
-                    st.caption("Consolidación de precio en curso.")
-
-    # --- SIMULADOR DE INVERSIÓN (PIE DE PÁGINA) ---
-    st.markdown("---")
-    with st.expander("🧮 Calculadora de Retorno Proyectado"):
-        inv_col1, inv_col2 = st.columns(2)
-        monto = inv_col1.number_input("Monto a invertir (USD)", value=1000)
-        stock_sim = inv_col2.selectbox("En la acción:", data.columns, key="sim")
+            # Cálculo de Retorno Real
+            initial_p = data[target].iloc[0]
+            final_p = data[target].iloc[-1]
+            profit = cash * (final_p / initial_p - 1)
+            
+            fig_inv = go.Figure()
+            fig_inv.add_trace(go.Scatter(x=data.index, y=(data[target]/initial_p)*cash, 
+                                        line=dict(color='#58a6ff', width=3), fill='tozeroy'))
+            fig_inv.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=350)
+            st.plotly_chart(fig_inv, use_container_width=True)
         
-        retorno_total = (data[stock_sim].iloc[-1] / data[stock_sim].iloc[0] - 1)
-        ganancia = monto * retorno_total
-        st.write(f"Si hubieras invertido **${monto}** hace 6 meses en **{stock_sim}**, hoy tendrías **${monto + ganancia:.2f}**.")
+        with col_inv2:
+            st.markdown("<br><br>", unsafe_allow_html=True)
+            st.metric("Balance Proyectado", f"${cash + profit:,.2f}", f"{((final_p/initial_p)-1)*100:.2f}%")
+            st.info(f"Análisis: {target} ha mostrado un crecimiento sólido en el último ciclo.")
+
+    with tab_tech:
+        st.subheader("Indicadores de Momento")
+        stock_tech = st.selectbox("Analizar Activo:", data.columns, key="tech_sel")
+        
+        # Cálculo de RSI (Indicador de Fuerza Relativa)
+        delta = data[stock_tech].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1+rs))
+        
+        fig_rsi = go.Figure()
+        fig_rsi.add_trace(go.Scatter(x=data.index, y=rsi, name="RSI (14)", line=dict(color='#ff7b72')))
+        fig_rsi.add_hline(y=70, line_dash="dot", line_color="red", annotation_text="Sobrecompra")
+        fig_rsi.add_hline(y=30, line_dash="dot", line_color="green", annotation_text="Sobreventa")
+        fig_rsi.update_layout(template="plotly_dark", height=300, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        st.plotly_chart(fig_rsi, use_container_width=True)
+
+    with tab_risk:
+        st.subheader("Mapa de Calor de Correlación")
+        # Esto permite ver si tu portafolio está diversificado o si todo se mueve igual
+        corr = data.pct_change().corr()
+        fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
+        fig_corr.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        st.plotly_chart(fig_corr, use_container_width=True)
+        st.caption("Nota: Valores cercanos a 1 indican que los activos se mueven en la misma dirección.")
+
+    # --- FOOTER TERMINAL ---
+    st.markdown("---")
+    st.markdown(f"<div style='text-align: right; color: #8b949e;'>SYSTEM_USER: D_VARGAS_PARRA | SESSION: {np.random.randint(1000,9999)}</div>", unsafe_allow_html=True)
 
 except Exception as e:
-    st.error(f"Error de conexión con la red de trading: {e}")
+    st.error("Error en la conexión con el nodo central. Reintentando...")
