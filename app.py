@@ -2,118 +2,150 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
-import plotly.express as px
+from scipy.optimize import minimize
 import numpy as np
 
-# Configuración de Interfaz de Grado Bancario
-st.set_page_config(page_title="Alpha Intelligence Terminal", layout="wide", initial_sidebar_state="collapsed")
+# Configuración de Terminal Pro (1. Sin Scanner Visual)
+st.set_page_config(page_title="Alpha Trading Terminal", layout="wide", initial_sidebar_state="collapsed")
 
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap');
     
-    .main { background: #010409; }
+    /* Fondo limpio y oscuro */
+    .main { background: #0d1117; }
     
-    /* Efecto de Escaneo de Datos */
-    .stApp::before {
-        content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 1px;
-        background: rgba(56, 189, 248, 0.5); box-shadow: 0 0 10px #38bdf8;
-        z-index: 9999; animation: scan 4s linear infinite; pointer-events: none;
-    }
-    @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+    /* ELIMINADO EL EFECTO SCANNER (stApp::before) */
 
     /* Estilo de contenedores */
-    [data-testid="stVerticalBlock"] > div:has(div.stMetric) {
-        background: rgba(22, 27, 34, 0.7);
-        border: 1px solid #30363d;
-        border-radius: 10px;
-        padding: 10px;
+    div[data-testid="stMetric"] {
+        background: rgba(22, 27, 34, 0.7) !important;
+        border: 1px solid #30363d !important;
+        border-radius: 12px !important;
+        padding: 15px !important;
+        transition: 0.3s;
+    }
+    div[data-testid="stMetric"]:hover {
+        border-color: #58a6ff !important;
+        box-shadow: 0 0 20px rgba(88, 166, 255, 0.1) !important;
     }
 
     h1, h2, h3 { font-family: 'Orbitron', sans-serif; color: #58a6ff; }
     code { font-family: 'JetBrains Mono', monospace; }
+    
+    /* Estilo para las Noticias */
+    .news-box {
+        background: rgba(22, 27, 34, 0.5);
+        border-left: 5px solid;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 @st.cache_data(ttl=300)
-def get_pro_data():
+def get_terminal_data():
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA']
-    df = yf.download(tickers, period="1y", interval="1d", progress=False)['Close']
+    df = yf.download(tickers, period="2y", interval="1d", progress=False)['Close']
     return df
 
 try:
-    data = get_pro_data()
+    data = get_terminal_data()
+    returns = data.pct_change().dropna()
+    tickers = data.columns
     
-    # --- DASHBOARD HEADER ---
-    head1, head2 = st.columns([4, 1])
-    head1.title("💹 ALPHA_STRAT_TERMINAL")
-    head2.metric("LATENCY", "14ms", "-2ms")
+    # --- HEADER ---
+    st.title("💹 ALPHA TRADING TERMINAL v5")
+    st.markdown("---")
 
-    # --- TOP TICKER TAPE ---
-    st.markdown("### 📡 Live Node Connection")
-    m_cols = st.columns(len(data.columns))
-    for i, tick in enumerate(data.columns):
+    # --- MÉTRICAS EN TIEMPO REAL ---
+    m_cols = st.columns(len(tickers))
+    for i, tick in enumerate(tickers):
         val = data[tick].iloc[-1]
         delta = (val / data[tick].iloc[-2] - 1) * 100
-        m_cols[i].metric(tick, f"{val:.1f}", f"{delta:.2f}%")
+        m_cols[i].metric(tick, f"${val:.1f}", f"{delta:.2f}%")
 
-    # --- CUERPO PRINCIPAL ---
-    tab_inv, tab_tech, tab_risk = st.tabs(["🚀 Inversión Inteligente", "🧪 Laboratorio Técnico", "⚠️ Gestión de Riesgo"])
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    with tab_inv:
-        col_inv1, col_inv2 = st.columns([2, 1])
+    # --- ZONA DE ANÁLISIS ---
+    tab_opt, tab_news = st.tabs(["🧬 Optimización Inteligente", "📰 Inteligencia de Contexto"])
+
+    with tab_opt:
+        col_opt1, col_opt2 = st.columns([2, 1])
         
-        with col_inv1:
-            st.subheader("Simulador de Portafolio")
-            cash = st.slider("Capital Inicial (USD)", 1000, 50000, 5000)
-            target = st.selectbox("Seleccionar Activo para Backtesting", data.columns)
+        with col_opt1:
+            st.subheader("Cálculo de Portafolio Eficiente (Frontera)")
+            cash_opt = st.number_input("Capital a Optimizar (USD)", value=10000)
             
-            # Cálculo de Retorno Real
-            initial_p = data[target].iloc[0]
-            final_p = data[target].iloc[-1]
-            profit = cash * (final_p / initial_p - 1)
+            # --- LÓGICA DE OPTIMIZACIÓN DE PORTAFOLIO (NIVEL EXTERNADO PRO) ---
+            def get_ret_vol_sharpe(weights):
+                weights = np.array(weights)
+                ret = np.sum(returns.mean() * weights) * 252 # Retorno anualizado
+                vol = np.sqrt(np.dot(weights.T, np.dot(returns.cov() * 252, weights))) # Volatilidad anualizada
+                sharpe = ret / vol # Ratio de Sharpe simplificado
+                return np.array([ret, vol, sharpe])
+
+            # Minimizar la volatilidad negativa (que es maximizar el Ratio de Sharpe)
+            def minimize_volatility(weights):
+                return get_ret_vol_sharpe(weights)[1] # Queremos minimizar la vol
+
+            num_tickers = len(tickers)
+            init_guess = num_tickers * [1.0/num_tickers] # Suposición inicial: todo igual
+            bounds = tuple((0,1) for _ in range(num_tickers)) # No shorts: pesos entre 0 y 1
+            cons = ({'type':'eq', 'fun': lambda x: np.sum(x)-1}) # La suma de pesos debe ser 1
+
+            # Ejecutar optimizador
+            opt_results = minimize(minimize_volatility, init_guess, method='SLSQP', bounds=bounds, constraints=cons)
+            opt_weights = opt_results.x
             
-            fig_inv = go.Figure()
-            fig_inv.add_trace(go.Scatter(x=data.index, y=(data[target]/initial_p)*cash, 
-                                        line=dict(color='#58a6ff', width=3), fill='tozeroy'))
-            fig_inv.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=350)
-            st.plotly_chart(fig_inv, use_container_width=True)
+            # Visualización
+            fig_opt = go.Figure()
+            fig_opt.add_trace(go.Bar(x=tickers, y=opt_weights, marker_color='#38bdf8'))
+            fig_opt.update_layout(template="plotly_dark", title="Distribución de Pesos Sugerida", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+            st.plotly_chart(fig_opt, use_container_width=True)
         
-        with col_inv2:
+        with col_opt2:
             st.markdown("<br><br>", unsafe_allow_html=True)
-            st.metric("Balance Proyectado", f"${cash + profit:,.2f}", f"{((final_p/initial_p)-1)*100:.2f}%")
-            st.info(f"Análisis: {target} ha mostrado un crecimiento sólido en el último ciclo.")
+            st.success("**Recomendación IA**")
+            # Mostrar pesos en USD
+            for i, tick in enumerate(tickers):
+                st.write(f"• Invertir **${cash_opt * opt_weights[i]:,.2f}** en {tick}")
 
-    with tab_tech:
-        st.subheader("Indicadores de Momento")
-        stock_tech = st.selectbox("Analizar Activo:", data.columns, key="tech_sel")
+    with tab_news:
+        col_n1, col_n2 = st.columns([1, 2])
         
-        # Cálculo de RSI (Indicador de Fuerza Relativa)
-        delta = data[stock_tech].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-        rs = gain / loss
-        rsi = 100 - (100 / (1+rs))
-        
-        fig_rsi = go.Figure()
-        fig_rsi.add_trace(go.Scatter(x=data.index, y=rsi, name="RSI (14)", line=dict(color='#ff7b72')))
-        fig_rsi.add_hline(y=70, line_dash="dot", line_color="red", annotation_text="Sobrecompra")
-        fig_rsi.add_hline(y=30, line_dash="dot", line_color="green", annotation_text="Sobreventa")
-        fig_rsi.update_layout(template="plotly_dark", height=300, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-        st.plotly_chart(fig_rsi, use_container_width=True)
-
-    with tab_risk:
-        st.subheader("Mapa de Calor de Correlación")
-        # Esto permite ver si tu portafolio está diversificado o si todo se mueve igual
-        corr = data.pct_change().corr()
-        fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='RdBu_r')
-        fig_corr.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-        st.plotly_chart(fig_corr, use_container_width=True)
-        st.caption("Nota: Valores cercanos a 1 indican que los activos se mueven en la misma dirección.")
-
-    # --- FOOTER TERMINAL ---
-    st.markdown("---")
-    st.markdown(f"<div style='text-align: right; color: #8b949e;'>SYSTEM_USER: D_VARGAS_PARRA | SESSION: {np.random.randint(1000,9999)}</div>", unsafe_allow_html=True)
+        with col_n1:
+            st.subheader("Simulador de Sentimiento")
+            st.info("Este panel usa PLN (Procesamiento de Lenguaje Natural) simulado para analizar el impacto de noticias en el mercado.")
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Semáforo de Sentimiento
+            sentimiento_global = np.random.choice(['ALCISTA', 'NEUTRAL', 'BAJISTA'], p=[0.4, 0.4, 0.2])
+            if sentimiento_global == 'ALCISTA':
+                st.markdown("<h2 style='color: #2ea44f; text-align: center;'>▲ ALCISTA</h2>", unsafe_allow_html=True)
+            elif sentimiento_global == 'BAJISTA':
+                st.markdown("<h2 style='color: #cb2431; text-align: center;'>▼ BAJISTA</h2>", unsafe_allow_html=True)
+            else:
+                st.markdown("<h2 style='color: #dbab09; text-align: center;'>━ NEUTRAL</h2>", unsafe_allow_html=True)
+                
+        with col_n2:
+            st.subheader("Feed de Inteligencia Global")
+            # Noticias Simuladas Dinámicas
+            noticias_ejemplo = [
+                ("NVDA", "Resultados trimestrales superan expectativas por demanda de IA.", "ALCISTA"),
+                ("AAPL", "Rumores de retraso en el nuevo iPhone por cadena de suministro.", "BAJISTA"),
+                ("MSFT", "Anunciada integración masiva de ChatGPT en Office 2026.", "ALCISTA"),
+                ("TSLA", "Apertura exitosa de la nueva Gigafactory en Europa.", "ALCISTA")
+            ]
+            
+            for stock, titular, sent en noticias_ejemplo:
+                b_color = "#2ea44f" if sent == "ALCISTA" else "#cb2431"
+                st.markdown(f"""
+                <div class='news-box' style='border-color: {b_color};'>
+                    <strong>[{stock}]</strong> - {titular}
+                </div>
+                """, unsafe_allow_html=True)
 
 except Exception as e:
-    st.error("Error en la conexión con el nodo central. Reintentando...")
+    st.error(f"Error en la conexión con el nodo central: {e}")
