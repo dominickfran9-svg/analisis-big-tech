@@ -2,158 +2,139 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
+import plotly.express as px
 from scipy.optimize import minimize
 import numpy as np
 
-# 1. SETUP DE TERMINAL DE GRADO BANCARIO
-st.set_page_config(page_title="Alpha Trading Terminal", layout="wide", initial_sidebar_state="collapsed")
+# 1. CONFIGURACIÓN DE NÚCLEO
+st.set_page_config(page_title="Alpha Quantum Terminal", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. CSS AVANZADO: GLASSMORPHISM Y MICRO-INTERACCIONES
+# 2. CSS: ARQUITECTURA VISUAL "DEEP DARK"
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap');
     
-    /* Fondo limpio y oscuro */
     .main { background: #010409; }
     
-    /* ELIMINADO EL EFECTO SCANNER (stApp::before) */
-
-    /* Tarjetas Dinámicas con Glow Adaptativo (Micro-Interacción) */
+    /* Tarjetas con Efecto de Profundidad y Borde de Neón Reactivo */
     div[data-testid="stMetric"] {
-        background: rgba(13, 17, 23, 0.8) !important;
+        background: linear-gradient(145deg, #0d1117, #161b22) !important;
         border: 1px solid #30363d !important;
-        backdrop-filter: blur(12px) !important;
-        border-radius: 20px !important;
-        padding: 20px !important;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-        position: relative;
-        overflow: hidden;
+        border-radius: 16px !important;
+        padding: 24px !important;
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 10px 10px 20px #010409, -5px -5px 15px #161b22 !important;
     }
 
-    div[data-testid="stMetric"]::after {
-        content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background: radial-gradient(circle at center, transparent, rgba(88, 166, 255, 0.05));
-        opacity: 0; transition: opacity 0.3s;
-    }
-
-    /* Animación de elevación y Glow Adaptativo al pasar el mouse */
     div[data-testid="stMetric"]:hover {
-        transform: translateY(-8px) scale(1.02) !important;
-        box-shadow: 0 0 30px rgba(56, 189, 248, 0.3) !important;
+        transform: translateY(-10px) scale(1.03) !important;
+        border-color: #58a6ff !important;
+        box-shadow: 0 0 25px rgba(88, 166, 255, 0.2) !important;
     }
 
-    /* Colores de Glow específicos por empresa (Simulado, pero estético) */
-    div[data-testid="stMetric"]:has(label:contains('AAPL')):hover { border-color: #aff5b4 !important; box-shadow: 0 0 30px rgba(175, 245, 180, 0.3) !important; }
-    div[data-testid="stMetric"]:has(label:contains('NVDA')):hover { border-color: #7000ff !important; box-shadow: 0 0 30px rgba(112, 0, 255, 0.3) !important; }
-    div[data-testid="stMetric"]:has(label:contains('MSFT')):hover { border-color: #1f6feb !important; box-shadow: 0 0 30px rgba(31, 111, 235, 0.3) !important; }
-    div[data-testid="stMetric"]:has(label:contains('TSLA')):hover { border-color: #f85149 !important; box-shadow: 0 0 30px rgba(248, 81, 73, 0.3) !important; }
-
-    h1, h2, h3 { font-family: 'Orbitron', sans-serif; color: #f0f6fc; text-transform: uppercase; letter-spacing: 2px; }
-    
-    /* Estilo para las Noticias */
-    .news-box {
-        background: rgba(22, 27, 34, 0.5);
-        border-left: 5px solid;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 12px;
-        transition: 0.2s;
+    h1, h2, h3 { font-family: 'Orbitron', sans-serif; color: #f0f6fc; letter-spacing: 3px; }
+    .stTabs [data-baseweb="tab-list"] { gap: 15px; }
+    .stTabs [data-baseweb="tab"] { 
+        background: #0d1117; border-radius: 10px; border: 1px solid #30363d; padding: 10px 25px;
     }
-    .news-box:hover { transform: translateX(5px); background: rgba(22, 27, 34, 0.7); }
+    .stTabs [aria-selected="true"] { background: #1f6feb !important; border-color: #58a6ff !important; }
     </style>
     """, unsafe_allow_html=True)
 
 @st.cache_data(ttl=300)
-def get_live_data():
+def get_advanced_data():
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA']
-    df = yf.download(tickers, period="1mo", interval="1d", progress=False)['Close']
+    df = yf.download(tickers, period="1y", interval="1d", progress=False)['Close']
     return df
 
 try:
-    data = get_live_data()
+    data = get_advanced_data()
     returns = data.pct_change().dropna()
     tickers = data.columns
     
-    # --- HEADER ---
-    head1, head2 = st.columns([3, 1])
-    head1.title("📡 QUANTUM TRADING TERMINAL")
-    head2.status("DATA FEED ACTIVE", state="running")
+    # --- HEADER ESTRATÉGICO ---
+    c1, c2, c3 = st.columns([3, 1, 1])
+    c1.title("💹 QUANTUM HUB v6")
+    volatilidad_global = returns.std().mean() * 100 * np.sqrt(252)
+    c2.metric("MARKET VOL (VIX)", f"{volatilidad_global:.2f}%", "-1.2%")
+    c3.metric("NODES ACTIVE", "7/7", "STABLE")
+
     st.markdown("---")
 
-    # 1. MÉTRICAS DINÁMICAS (Micro-interacciones activadas)
+    # 1. PANEL DE MÉTRICAS AVANZADAS
     m_cols = st.columns(len(tickers))
     for i, tick in enumerate(tickers):
-        val = data[tick].iloc[-1]
-        delta = (val / data[tick].iloc[-2] - 1) * 100
-        m_cols[i].metric(label=f"SYS::{tick}", value=f"${val:.1f}", delta=f"{delta:.2f}%")
+        curr = data[tick].iloc[-1]
+        ytd_ret = (curr / data[tick].iloc[0] - 1) * 100
+        m_cols[i].metric(label=tick, value=f"${curr:.1f}", delta=f"{ytd_ret:.1f}% YTD")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 2. ZONA DE VISUALIZACIÓN NEÓN 2.0
-    st.subheader("Visualizador de Activos de Alto Rendimiento")
-    tab_chart, tab_opt, tab_news = st.tabs(["⚡ Gráfico Neón", "🧬 Optimización IA", "📰 Inteligencia"])
+    # 2. PANELES DE ALTA INTELIGENCIA
+    tab_vis, tab_risk, tab_alpha = st.tabs(["🚀 Gráfico de Precisión", "⚖️ Análisis de Riesgo", "🤖 Optimizador Alpha"])
 
-    with tab_chart:
-        # Gráfico con líneas curvas (spline) y glow adaptativo
-        fig = go.Figure()
-        colors = ['#00f2ff', '#7000ff', '#ff007b', '#aff5b4', '#d29922', '#1f6feb', '#f85149']
-        
-        for i, t in enumerate(tickers):
-            # Normalización a base 100 (Estándar Profesional)
-            norm = (data[t] / data[t].iloc[0]) * 100
-            fig.add_trace(go.Scatter(
-                x=data.index, y=norm, name=t,
-                mode='lines',
-                line=dict(color=colors[i % len(colors)], width=4, shape='spline'), # Líneas curvas
-                fill='tonexty', fillcolor=f'rgba({i*30}, 242, 255, 0.02)', # Glow traslúcido
-                # Micro-interacción: Iluminar la línea intensamente al pasar el mouse
-                hoverlabel=dict(bgcolor=colors[i % len(colors)], font_size=16, font_family="Orbitron"),
-                hovertemplate="<b>%{x}</b><br>Retorno: %{y:.2f}%<extra></extra>"
-            ))
-
-        fig.update_layout(
-            hovermode="x unified", template="plotly_dark",
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            height=600, xaxis=dict(showgrid=False),
-            yaxis=dict(side="right", gridcolor='rgba(255,255,255,0.05)', title="Crecimiento Relativo (%)")
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-    with tab_opt:
-        col_o1, col_o2 = st.columns([2, 1])
-        with col_o1:
-            cash = st.number_input("Capital a Optimizar (USD)", value=10000)
-            def min_v(w): return np.sqrt(np.dot(w.T, np.dot(returns.cov()*252, w)))
-            res = minimize(min_v, len(tickers)*[1./len(tickers)], bounds=tuple((0,1) for _ in range(len(tickers))), constraints={'type':'eq','fun':lambda x: np.sum(x)-1})
-            
-            fig_bar = go.Figure(go.Bar(x=tickers, y=res.x, marker_color='#38bdf8'))
-            fig_bar.update_layout(template="plotly_dark", title="Distribución de Riesgo Mínimo (Márkaris)", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=400)
-            st.plotly_chart(fig_bar, use_container_width=True)
-        with col_o2:
-            st.markdown("<br><br>", unsafe_allow_html=True)
-            st.success("**Recomendación del Algoritmo**")
+    with tab_vis:
+        col_v1, col_v2 = st.columns([4, 1])
+        with col_v1:
+            # Gráfico con área sombreada y curvas spline mejoradas
+            fig = go.Figure()
             for i, t in enumerate(tickers):
-                if res.x[i] > 0.01:
-                    st.write(f"• **{t}**: ${cash * res.x[i]:,.2f}")
+                norm = (data[t] / data[t].iloc[0]) * 100
+                fig.add_trace(go.Scatter(
+                    x=data.index, y=norm, name=t, mode='lines',
+                    line=dict(width=4, shape='spline'),
+                    fill='tonexty', fillcolor='rgba(88, 166, 255, 0.01)'
+                ))
+            fig.update_layout(
+                hovermode="x unified", template="plotly_dark", height=550,
+                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(showgrid=False), yaxis=dict(side="right", gridcolor='rgba(255,255,255,0.05)')
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col_v2:
+            st.subheader("Leaderboard")
+            # Ranking de rendimiento real
+            ranking = ((data.iloc[-1] / data.iloc[0] - 1) * 100).sort_values(ascending=False)
+            for rank, (name, val) in enumerate(ranking.items()):
+                st.write(f"#{rank+1} **{name}**: {val:.1f}%")
 
-    with tab_news:
-        noticias = [
-            ("NVDA", "Resultados trimestrales superan expectativas por demanda de IA.", "ALCISTA"),
-            ("TSLA", "Nuevas regulaciones impactan margen neto.", "BAJISTA"),
-            ("MSFT", "Anunciada integración masiva de ChatGPT en Office 2026.", "ALCISTA"),
-            ("AAPL", "Rumores de retraso en el nuevo iPhone por cadena de suministro.", "BAJISTA")
-        ]
-        for stock, txt, sent in noticias:
-            color = "#2ea44f" if sent == "ALCISTA" else "#cb2431"
-            st.markdown(f"""
-            <div class='news-box' style='border-color: {color};'>
-                <strong>[{stock}]</strong> - {txt}
-            </div>
-            """, unsafe_allow_html=True)
+    with tab_risk:
+        col_r1, col_r2 = st.columns(2)
+        with col_r1:
+            st.subheader("Mapa de Correlación")
+            corr = returns.corr()
+            fig_corr = px.imshow(corr, text_auto=".2f", color_continuous_scale='Blues')
+            fig_corr.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+            st.plotly_chart(fig_corr, use_container_width=True)
+        with col_r2:
+            st.subheader("Distribución de Retornos")
+            fig_dist = go.Figure()
+            for t in tickers[:3]: # Solo top 3 para no saturar
+                fig_dist.add_trace(go.Histogram(x=returns[t], name=t, opacity=0.6))
+            fig_dist.update_layout(barmode='overlay', template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
+            st.plotly_chart(fig_dist, use_container_width=True)
 
-    # --- FOOTER TERMINAL ---
+    with tab_alpha:
+        # Optimizador de Markowitz para Administración de Empresas
+        st.subheader("Simulación de Cartera Eficiente")
+        cash = st.number_input("Inversión Total (USD)", value=10000, step=1000)
+        
+        def obj_func(w):
+            return np.sqrt(np.dot(w.T, np.dot(returns.cov()*252, w))) # Minimizar Volatilidad
+
+        res = minimize(obj_func, len(tickers)*[1./len(tickers)], 
+                       bounds=tuple((0,1) for _ in range(len(tickers))), 
+                       constraints={'type':'eq','fun': lambda x: np.sum(x)-1})
+        
+        res_cols = st.columns(len(tickers))
+        for i, t in enumerate(tickers):
+            peso = res.x[i]
+            res_cols[i].metric(t, f"{peso*100:.1f}%", f"${cash*peso:,.0f}")
+
+    # --- FOOTER ---
     st.markdown("---")
-    st.markdown(f"<div style='text-align: right; color: #475569; font-family: monospace;'>SYSTEM_USER: VARGAS_PARRA | SESSION: {np.random.randint(1000,9999)}</div>", unsafe_allow_html=True)
+    st.caption("Terminal de Análisis Estratégico | Universidad Externado de Colombia | Business Admin Edition")
 
 except Exception as e:
-    st.error(f"Error en la red de trading: {e}")
+    st.error(f"Error de sincronización con el mercado: {e}")
