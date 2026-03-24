@@ -2,92 +2,126 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 import plotly.express as px
+import plotly.graph_objects as go
 
-# Configuración de página
-st.set_page_config(page_title="Big Tech Insight", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Big Tech Quantum Analysis", layout="wide", initial_sidebar_state="collapsed")
 
-# CSS Avanzado para diseño Premium
+# CSS de Nivel Profesional con Animaciones de Keyframes
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;600&display=swap');
     
-    .main { background: radial-gradient(circle at top right, #0d1117, #010409); }
-    html, body, [data-testid="stAppViewContainer"] { font-family: 'Inter', sans-serif; color: #e6edf3; }
-    
-    /* Tarjetas con efecto Glassmorphism y Animación */
+    .main {
+        background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+    }
+
+    /* Animación de entrada suave */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stApp {
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    /* Tarjetas estilo "Cyberpunk Glass" */
     div[data-testid="stMetric"] {
-        background: rgba(22, 27, 34, 0.5) !important;
-        border: 1px solid rgba(48, 54, 61, 1) !important;
-        padding: 25px !important;
-        border-radius: 15px !important;
-        transition: all 0.3s ease-in-out;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        background: rgba(30, 41, 59, 0.4) !important;
+        border: 1px solid rgba(56, 189, 248, 0.2) !important;
+        backdrop-filter: blur(12px) !important;
+        padding: 20px !important;
+        border-radius: 20px !important;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        position: relative;
+        overflow: hidden;
     }
+
     div[data-testid="stMetric"]:hover {
-        transform: translateY(-5px);
-        border-color: #58a6ff !important;
-        background: rgba(30, 41, 59, 0.7) !important;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        transform: scale(1.05) !important;
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 25px rgba(56, 189, 248, 0.4) !important;
+        background: rgba(30, 41, 59, 0.6) !important;
     }
-    
-    h1 { font-weight: 800; letter-spacing: -1px; background: -webkit-linear-gradient(#fff, #8b949e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .stSubheader { color: #8b949e !important; font-weight: 400; }
+
+    /* Estilo para el título */
+    h1 {
+        font-family: 'Orbitron', sans-serif;
+        background: linear-gradient(90deg, #fff, #38bdf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 3rem !important;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    /* Ocultar barra de Streamlit para más limpieza */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
-st.title("📊 Análisis Estratégico de las Big Tech")
-st.subheader("Monitoreo de rendimiento en tiempo real para toma de decisiones financieras.")
-st.markdown("---")
+st.title("⚡ Quantum Tech Metrics")
+st.markdown("<p style='color: #7dd3fc; opacity: 0.8;'>Análisis algorítmico de activos de alto rendimiento</p>", unsafe_allow_html=True)
 
 @st.cache_data(ttl=600)
-def load_market_data():
+def get_elite_data():
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN']
     df = yf.download(tickers, period="1mo", interval="1d", progress=False)['Close']
     return df
 
 try:
-    df = load_market_data()
+    df = get_elite_data()
     
     if not df.empty:
-        # Fila de métricas animadas
-        cols = st.columns(4)
-        t_list = ['AAPL', 'MSFT', 'GOOGL', 'AMZN']
+        # Fila de métricas con diseño mejorado
+        m1, m2, m3, m4 = st.columns(4)
+        ts = ['AAPL', 'MSFT', 'GOOGL', 'AMZN']
+        slots = [m1, m2, m3, m4]
         
-        for i, t in enumerate(t_list):
+        for i, t in enumerate(ts):
             price = df[t].iloc[-1]
-            change = ((df[t].iloc[-1] / df[t].iloc[0]) - 1) * 100
-            cols[i].metric(label=t, value=f"${price:.2f}", delta=f"{change:.2f}%")
+            diff = ((df[t].iloc[-1] / df[t].iloc[0]) - 1) * 100
+            slots[i].metric(label=f"NODE: {t}", value=f"${price:.2f}", delta=f"{diff:.2f}%")
 
-        st.markdown("###")
-        
-        # Gráfico de Área interactivo (Más estético que el de líneas)
-        st.subheader("📈 Evolución de Capitalización")
-        fig = px.area(df, 
-                      template="plotly_dark", 
-                      color_discrete_sequence=px.colors.sequential.Blues_r,
-                      labels={'value': 'Precio (USD)', 'Date': 'Fecha'})
-        
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Gráfico de Área con Diseño de "Holograma"
+        fig = go.Figure()
+
+        colors = ['#38bdf8', '#818cf8', '#c084fc', '#fb7185']
+        for i, t in enumerate(ts):
+            fig.add_trace(go.Scatter(
+                x=df.index, y=df[t],
+                name=t,
+                fill='toself',
+                fillcolor=f'rgba({int(i*40)}, 189, 248, 0.05)',
+                line=dict(color=colors[i], width=3),
+                mode='lines',
+                hovertemplate="<b>%{x}</b><br>Price: $%{y:.2f}<extra></extra>"
+            ))
+
         fig.update_layout(
             hovermode="x unified",
+            template="plotly_dark",
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            margin=dict(l=0, r=0, t=30, b=0)
+            xaxis=dict(showgrid=False, color="#94a3b8"),
+            yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)', side="right"),
+            legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center"),
+            height=500
         )
-        fig.update_xaxes(showgrid=False)
-        fig.update_yaxes(showgrid=True, gridcolor='rgba(255,255,255,0.05)')
         
         st.plotly_chart(fig, use_container_width=True)
-        
-        # Resumen Ejecutivo
-        st.markdown("---")
-        c1, c2 = st.columns(2)
-        with c1:
-            st.info("**Tendencia:** El sector tecnológico muestra una recuperación sólida este mes.")
+
+        # Panel Inferior de Inteligencia
+        c1, c2, c3 = st.columns([1,2,1])
         with c2:
-            st.success("**Recomendación:** Mantener posiciones en activos con baja volatilidad como MSFT.")
-            
-    else:
-        st.error("Reconectando...")
-except Exception as e:
-    st.info("Actualizando interfaz...")
+            st.markdown("""
+                <div style='text-align: center; padding: 20px; border-radius: 10px; border: 1px dashed #38bdf8;'>
+                    <span style='color: #38bdf8;'>●</span> SISTEMA ACTIVO <span style='color: #38bdf8; margin-left: 20px;'>●</span> DATOS ENCRIPTADOS <span style='color: #38bdf8; margin-left: 20px;'>●</span> MERCADO ABIERTO
+                </div>
+            """, unsafe_allow_html=True)
+
+except Exception:
+    st.error("Error en el flujo de datos cuánticos.")
