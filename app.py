@@ -72,7 +72,7 @@ try:
     returns = df.pct_change().dropna()
     tickers = df.columns
 
-    st.title("🏛️ ALPHA STRATEGIC INTELLIGENCE - FINAL ADAPTIVE")
+    st.title("🏛️ ANÁLISIS ESTRATEGICO DE ACCIONES BIG TECH")
     st.markdown("---")
 
     # KPIs SUPERIORES
