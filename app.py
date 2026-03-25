@@ -6,168 +6,163 @@ import plotly.express as px
 from scipy.optimize import minimize
 import numpy as np
 
-# 1. CONFIGURACIÓN DEL SISTEMA ACADÉMICO
+# 1. CONFIGURACIÓN DEL SISTEMA GERENCIAL
 st.set_page_config(page_title="Terminal Gerencial Big Tech", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. CSS: ARQUITECTURA VISUAL ADAPTABLE (FIX PARA TEMA CLARO/OSCURO)
+# 2. CSS: ARQUITECTURA VISUAL ADAPTABLE (FIX PARA TEMAS Y KPI BOXES)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
     
-    /* Fondo adaptable al tema del navegador */
-    .stApp { background: var(--background-color); }
-    
-    /* Contenedores de KPIs y Análisis ADAPTABLES (Sin fondo fijo) */
+    /* Contenedores Adaptables: Se ajustan al color de fondo del tema del navegador */
     div[data-testid="stMetric"], .executive-brief {
-        background: transparent !important;
-        border: 1px solid var(--text-color);
+        background: rgba(13, 17, 23, 0.05) !important;
+        border: 1px solid #30363d !important;
         border-radius: 12px;
         padding: 25px;
         margin-bottom: 25px;
-        color: var(--text-color) !important;
         transition: 0.3s;
     }
     
-    /* Glow sutil en KPIs al pasar el mouse (Adaptable) */
-    div[data-testid="stMetric"]:hover {
-        border-color: #58a6ff;
-        box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);
-    }
-    
-    /* Tipografía adaptable */
-    h1, h2, h3 { font-family: 'Orbitron', sans-serif; color: var(--text-color); letter-spacing: 2px; }
-    .stTabs [data-baseweb="tab"] { color: var(--text-color); }
-    
-    .brief-title { font-family: 'Orbitron', sans-serif; color: #58a6ff; font-size: 1.3rem; margin-bottom: 15px; text-transform: uppercase; border-bottom: 1px solid var(--text-color); padding-bottom: 10px; }
-    .brief-text { font-family: 'Inter', sans-serif; line-height: 1.9; text-align: justify; font-size: 1.05rem; }
-    b, .methodology { color: #58a6ff; }
-    
-    /* Estilo para las alertas de texto de la gráfica */
-    .label-alert { color: #f85149; font-weight: bold; }
+    /* Ajuste de tipografía para visibilidad en temas claros y oscuros */
+    h1, h2, h3 { font-family: 'Orbitron', sans-serif; letter-spacing: 2px; }
+    .brief-title { font-family: 'Orbitron', sans-serif; color: #58a6ff; font-size: 1.2rem; margin-bottom: 15px; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+    .brief-text { font-family: 'Inter', sans-serif; line-height: 1.8; text-align: justify; font-size: 1rem; }
+    b { color: #58a6ff; }
+    .formula { font-family: 'Courier New', monospace; background: rgba(88, 166, 255, 0.1); padding: 2px 5px; border-radius: 4px; }
     </style>
     """, unsafe_allow_html=True)
 
-@st.cache_data(ttl=300)
-def get_pro_data():
+@st.cache_data(ttl=600)
+def get_clean_data():
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA']
+    # Descarga de datos históricos de los últimos 2 años
     df = yf.download(tickers, period="2y", interval="1d", progress=False)['Close']
     return df
 
-# --- CUERPO PRINCIPAL ---
+# --- NÚCLEO DE PROCESAMIENTO ---
 try:
-    df = get_pro_data()
+    df = get_clean_data()
     returns = df.pct_change().dropna()
     tickers = df.columns
 
-    st.title("🏛️ TERMINAL GERENCIAL DE PORTAFOLIOS BIG TECH")
+    st.title("🏛️ SISTEMA DE OPTIMIZACIÓN DE PORTAFOLIOS BIG TECH")
     st.markdown("---")
 
-    # 1. MONITOR DE ACTIVOS (KPIs Adaptables)
+    # 1. MONITOR DE ACTIVOS (KPIs)
     m_cols = st.columns(len(tickers))
     for i, t in enumerate(tickers):
-        curr = df[t].iloc[-1]
-        ytd = (curr / df[t].iloc[0] - 1) * 100
-        # Streamlit ajusta automáticamente el color de la métrica según el tema
-        m_cols[i].metric(t, f"${curr:.2f}", f"{ytd:.1f}% YTD")
+        actual = df[t].iloc[-1]
+        ytd = (actual / df[t].iloc[0] - 1) * 100
+        m_cols[i].metric(t, f"${actual:.2f}", f"{ytd:.1f}% YTD")
 
-    # 2. PANELES DE ANÁLISIS DE PROFUNDIDAD MÁXIMA
-    tab_macro, tab_risk, tab_alpha, tab_frontier = st.tabs([
-        "🌎 Desempeño Macro", "🛡️ Gestión de Riesgo", "🧬 Optimización Markowitz", "📈 Frontera Eficiente"
-    ])
+    # 2. PANELES DE ANÁLISIS DE ALTA PROFUNDIDAD
+    tabs = st.tabs(["🌎 Desempeño Macro", "🛡️ Gestión de Riesgo", "🧬 Optimización Markowitz", "📈 Frontera Eficiente"])
 
-    with tab_macro:
-        col_m1, col_m2 = st.columns([3, 2])
-        with col_m1:
-            fig = go.Figure()
+    with tabs[0]:
+        c1, c2 = st.columns([3, 2])
+        with c1:
+            fig_p = go.Figure()
             for t in tickers:
-                norm = (data[t] / data[t].iloc[0]) * 100
-                fig.add_trace(go.Scatter(x=data.index, y=norm, name=t, line=dict(width=3, shape='spline')))
-            # Plantilla adaptable
-            fig.update_layout(
-                template="plotly_dark", 
-                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
-                height=600, font_color=var(--text-color)
-            )
-            st.plotly_chart(fig, use_container_width=True)
+                # Normalización Base 100 para comparativa directa
+                norm = (df[t] / df[t].iloc[0]) * 100
+                fig_p.add_trace(go.Scatter(x=df.index, y=norm, name=t, line=dict(width=2.5)))
+            fig_p.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=550)
+            st.plotly_chart(fig_p, use_container_width=True)
         
-        with col_m2:
+        with c2:
             st.markdown(f"""
             <div class='executive-brief'>
-                <div class='brief-title'>Análisis de Ciclo Económico: Normalización</div>
+                <div class='brief-title'>Análisis de Normalización Base 100</div>
                 <div class='brief-text'>
-                    <b>1. Metodología de la Gráfica:</b> Esta visualización no utiliza los precios nominales (los $250 o $500 que vale una acción), ya que sería imposible compararlas en una misma escala. Utilizamos la técnica de <b>Normalización a Base 100</b>.<br>
-                    <span class='methodology'>Fórmula: Precio<sub>t</sub> / Precio<sub>t0</sub> * 100.</span><br>
-                    Esto significa que todos los activos parten de un valor hipotético de "100" en el primer día de datos, permitiéndonos visualizar el crecimiento porcentual real de cada uno independientemente de su valor de mercado. <br><br>
-                    <b>2. Guía de Interpretación:</b> El eje Y representa el crecimiento relativo. Si una línea está en 150, significa que ha crecido un 50% desde el inicio de los datos. Como administrador, usted debe buscar qué activo muestra la línea con la pendiente más constante y positiva, identificando al líder del ciclo actual.<br><br>
-                    <b>3. Relevancia Gerencial:</b> Esta gráfica permite identificar la rotación de capital sectorial. Nos ayuda a responder: ¿Cuál de las Big Tech es la que realmente está capitalizando la tendencia actual?.
+                    <b>¿Cómo se obtuvo esta gráfica?</b> Se aplica la fórmula <span class='formula'>(Precio_t / Precio_0) * 100</span>. Esto permite comparar activos con precios nominales muy distantes (como acciones de $170 vs $600) bajo una misma métrica de crecimiento porcentual.<br><br>
+                    <b>Guía de Lectura:</b> El punto de partida de todas las líneas es 100. Si una línea alcanza los 150, el activo ha rendido un 50% de beneficio acumulado en el periodo.<br><br>
+                    <b>Interpretación Gerencial:</b> Observe la dispersión de las líneas. Una mayor separación indica que el mercado está diferenciando claramente el valor de cada compañía, rompiendo la tendencia de crecimiento sincronizado del sector.
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-    with tab_risk:
-        r_col1, r_col2 = st.columns([2.5, 2])
-        with r_col1:
-            corr = returns.corr()
-            fig_corr = px.imshow(corr, text_auto=".2f", color_continuous_scale='RdBu_r')
-            fig_corr.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=550)
-            st.plotly_chart(fig_corr, use_container_width=True)
+    with tabs[1]:
+        cr1, cr2 = st.columns([2.5, 2])
+        with cr1:
+            corr_m = returns.corr()
+            fig_c = px.imshow(corr_m, text_auto=".2f", color_continuous_scale='RdBu_r')
+            fig_c.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=500)
+            st.plotly_chart(fig_c, use_container_width=True)
         
-        with r_col2:
+        with cr2:
             st.markdown(f"""
             <div class='executive-brief'>
-                <div class='brief-title'>Matriz de Correlación: Riesgo Sistémico</div>
+                <div class='brief-title'>Interpretación de Matriz de Correlación</div>
                 <div class='brief-text'>
-                    <b>1. Metodología y Parámetros:</b> Esta matriz cuantifica el grado de sincronía entre los activos. Utilizamos el Coeficiente de Correlación de Pearson, que analiza los retornos logarítmicos diarios durante el último año. El parámetro <b>'ticker'</b> en los ejes X e Y hace referencia a los símbolos bursátiles de las empresas (AAPL, NVDA, etc.).<br><br>
-                    <b>2. Guía de Interpretación:</b> <br>
-                    • Los valores van de -1.0 a 1.0.<br>
-                    • <b>1.0 (Rojo Intenso):</b> Los activos se mueven de forma idéntica.<br>
-                    • <b>0.0 (Gris):</b> No hay relación entre sus movimientos.<br>
-                    • <b>-1.0 (Azul Intenso):</b> Se mueven en direcciones opuestas.<br>
-                    Una correlación superior a 0.70 indica que diversificar entre ellos no ofrece protección real.<br><br>
-                    <b>3. Por Qué es Vital:</b> Permite detectar el "Riesgo Beta". Si su portafolio tiene correlaciones muy altas, un evento negativo en el sector tecnológico afectará a todos sus activos por igual, anulando los beneficios de la diversificación.
+                    <b>Metodología:</b> Se utiliza el <b>Coeficiente de Pearson</b>. El término <b>Ticker</b> en los ejes representa las siglas de las empresas.<br><br>
+                    <b>Cómo leer los números:</b><br>
+                    • <b>1.00:</b> Relación perfecta (el activo consigo mismo).<br>
+                    • <b>0.70+:</b> Alta correlación. Si una acción cae, la otra probablemente también lo hará.<br>
+                    • <b>Cerca de 0:</b> Movimientos independientes.<br><br>
+                    <b>Uso Estratégico:</b> Un administrador busca correlaciones bajas para evitar que todo el portafolio sufra simultáneamente ante una noticia negativa del sector tecnológico.
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-    with tab_alpha:
-        a_col1, a_col2 = st.columns([2.5, 2])
-        with a_col1:
-            def min_vol(w): return np.sqrt(np.dot(w.T, np.dot(returns.cov() * 252, w)))
-            res = minimize(min_vol, [1./len(tickers)]*len(tickers), method='SLSQP', bounds=tuple((0,1) for _ in range(len(tickers))), constraints={'type':'eq','fun':lambda x: np.sum(x)-1})
+    with tabs[2]:
+        co1, co2 = st.columns([2.5, 2])
+        with co1:
+            # Algoritmo de Variancia Mínima de Markowitz
+            def min_v(w): return np.sqrt(np.dot(w.T, np.dot(returns.cov() * 252, w)))
+            res = minimize(min_v, [1./len(tickers)]*len(tickers), method='SLSQP', bounds=tuple((0,1) for _ in range(len(tickers))), constraints={'type':'eq','fun':lambda x: np.sum(x)-1})
             
-            # --- FIX PARA EL EMPASTE DE ETIQUETAS ---
-            # Ocultamos etiquetas de activos con peso inferior al 1% (0.01)
-            weights_viz = res.x
-            labels_viz = tickers
-            pie_markers = dict(colors=px.colors.sequential.Electric_r)
-            
-            # Si el peso es muy pequeño, la etiqueta no se muestra
-            fig_pie = go.Figure(data=[go.Pie(
-                labels=labels_viz, 
-                values=weights_viz, 
-                hole=.5, 
-                marker=pie_markers,
-                textinfo='percent+label' if weights_viz.any() > 0.01 else 'percent' # Fix de visibilidad
-            )])
-            fig_pie.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', height=500, showlegend=False)
-            st.plotly_chart(fig_pie, use_container_width=True)
-            
-        with a_col2:
+            # Filtro para limpiar el "empaste" visual de etiquetas pequeñas
+            v_weights = [w if w > 0.01 else 0 for w in res.x]
+            fig_o = go.Figure(data=[go.Pie(labels=tickers, values=v_weights, hole=.5)])
+            fig_o.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', height=500, showlegend=True)
+            st.plotly_chart(fig_o, use_container_width=True)
+        
+        with co2:
+            lider_p = tickers[np.argmax(res.x)]
             st.markdown(f"""
             <div class='executive-brief'>
-                <div class='brief-title'>Optimización Markowitz: Portafolio de Variancia Mínima</div>
+                <div class='brief-title'>Asignación Inteligente de Capital</div>
                 <div class='brief-text'>
-                    <b>1. Metodología de la Gráfica:</b> Esta gráfica de anillo representa la distribución de capital sugerida por la **Teoría Moderna de Portafolio de Harry Markowitz**. <br>
-                    <span class='methodology'>Objetivo: Encontrar los pesos de inversión (variables dependientes) que minimizan la Volatilidad Anualizada del portafolio total (función objetivo).</span><br>
-                    Los parámetros de entrada son la matriz de varianza-covarianza histórica de los activos seleccionados.<br><br>
-                    <b>2. Guía de Interpretación:</b> Cada sector del anillo representa el porcentaje exacto de dinero que debe invertir en cada acción. <span class='label-alert'>Nota: Los activos que no aparecen en el anillo tienen pesos menores al 1%, por lo que se ocultaron para evitar el empaste visual.</span>.<br><br>
-                    <b>3. Relevancia Gerencial:</b> Esta gráfica responde a: ¿Cómo debo repartir mi dinero para tener el mínimo riesgo posible? Esto maximiza el <b>Ratio de Sharpe</b>, que mide cuánto retorno obtenemos por cada unidad de riesgo asumida.
+                    <b>Origen de los Datos:</b> Esta gráfica es el resultado de resolver un problema de optimización matemática que busca la <b>Mínima Variancia</b> histórica del conjunto.<br><br>
+                    <b>Qué representan los sectores:</b> Cada color es la proporción del capital que el modelo sugiere invertir en cada empresa para reducir el riesgo total. En este momento, la mayor concentración se sugiere en <b>{lider_p}</b> debido a su estabilidad relativa frente al grupo.<br><br>
+                    <b>Interpretación:</b> Si un activo tiene un sector muy pequeño o no aparece, es porque su volatilidad o alta correlación con los demás lo hacen ineficiente para este modelo de protección de capital.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    with tabs[3]:
+        cf1, cf2 = st.columns([3, 2])
+        with cf1:
+            results = []
+            for _ in range(800): # Simulación Monte Carlo
+                w = np.random.random(len(tickers))
+                w /= np.sum(w)
+                r_sim = np.sum(returns.mean() * w) * 252
+                v_sim = np.sqrt(np.dot(w.T, np.dot(returns.cov() * 252, w)))
+                results.append([v_sim, r_sim])
+            
+            f_df = pd.DataFrame(results, columns=['Volatilidad (Riesgo)', 'Retorno'])
+            fig_f = px.scatter(f_df, x='Volatilidad (Riesgo)', y='Retorno', color='Retorno', color_continuous_scale='Viridis')
+            fig_f.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=550)
+            st.plotly_chart(fig_f, use_container_width=True)
+            
+        with cf2:
+            st.markdown(f"""
+            <div class='executive-brief'>
+                <div class='brief-title'>Análisis de Frontera Eficiente</div>
+                <div class='brief-text'>
+                    <b>Metodología:</b> Se simulan 800 combinaciones aleatorias de portafolios para mapear todas las posibilidades de riesgo-retorno.<br><br>
+                    <b>Guía de Interpretación:</b> <br>
+                    • <b>Eje X:</b> Representa el riesgo (volatilidad). Cuanto más a la derecha, más "nervioso" es el portafolio.<br>
+                    • <b>Eje Y:</b> Representa el retorno esperado.<br><br>
+                    <b>Decisión Gerencial:</b> Los puntos en el borde superior izquierdo son los <b>Portafolios Eficientes</b>. Un administrador inteligente nunca elegiría un punto a la derecha de la curva, ya que estaría asumiendo más riesgo por el mismo nivel de retorno.
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.caption("Terminal Gerencial de Portafolios Big Tech | Dominick Vargas Parra | Universidad Externado de Colombia")
+    st.caption("Terminal Gerencial | Dominick Vargas Parra | Universidad Externado de Colombia")
 
 except Exception as e:
     st.error(f"Fallo en el núcleo de datos: {e}")
