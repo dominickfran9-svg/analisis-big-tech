@@ -9,123 +9,123 @@ import numpy as np
 # 1. CONFIGURACIÓN DEL SISTEMA GERENCIAL
 st.set_page_config(page_title="Terminal Gerencial Big Tech", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. CSS: ARQUITECTURA VISUAL "CYBER-LUXURY" RESTAURADA
+# 2. CSS: ARQUITECTURA DE PANELES EXTENSOS
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
     
-    .stApp { background: var(--background-color); }
-    
-    /* Contenedores de KPIs y Análisis ADAPTABLES */
-    div[data-testid="stMetric"], .analysis-panel {
-        background: rgba(13, 17, 23, 0.05) !important;
-        border: 1px solid #30363d !important;
+    /* Paneles de Información Maximizados */
+    .info-container {
+        background: rgba(13, 17, 23, 0.7);
+        border: 1px solid #30363d;
         border-radius: 12px;
-        padding: 25px;
+        padding: 30px;
         margin-bottom: 25px;
-        transition: 0.3s;
+        min-height: 400px;
     }
     
-    .panel-title { font-family: 'Orbitron', sans-serif; color: #58a6ff; font-size: 1.1rem; margin-bottom: 15px; text-transform: uppercase; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
-    .panel-text { font-family: 'Inter', sans-serif; line-height: 1.9; text-align: justify; font-size: 1rem; color: var(--text-color); }
-    h1, h2, h3 { font-family: 'Orbitron', sans-serif; color: var(--text-color); }
-    b { color: #58a6ff; }
-    .methodology-tag { color: #f85149; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; }
+    .header-box {
+        font-family: 'Orbitron', sans-serif;
+        color: #58a6ff;
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #58a6ff;
+        padding-bottom: 10px;
+        text-transform: uppercase;
+    }
+    
+    .body-text {
+        font-family: 'Inter', sans-serif;
+        line-height: 2.1;
+        text-align: justify;
+        font-size: 1.05rem;
+        color: #c9d1d9;
+    }
+    
+    .formula-block {
+        background: rgba(0,0,0,0.3);
+        padding: 15px;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        color: #79c0ff;
+        margin: 15px 0;
+        border-left: 4px solid #58a6ff;
+    }
+    
+    /* Ajuste de KPIs */
+    div[data-testid="stMetric"] {
+        background: rgba(13, 17, 23, 0.5) !important;
+        border: 1px solid #30363d !important;
+        padding: 20px !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 @st.cache_data(ttl=600)
-def get_full_market_data():
+def get_data():
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA']
-    df = yf.download(tickers, period="2y", interval="1d", progress=False)['Close']
-    return df
+    return yf.download(tickers, period="2y", interval="1d", progress=False)['Close']
 
 try:
-    df = get_full_market_data()
+    df = get_data()
     returns = df.pct_change().dropna()
     tickers = df.columns
 
-    st.title("🏛️ ALPHA STRATEGIC INTELLIGENCE v17")
+    st.title("🏛️ ALPHA ELITE TERMINAL: DEEP STRATEGY")
     st.markdown("---")
 
-    # 1. RESTAURACIÓN DE KPIs SUPERIORES
+    # 1. KPIs SUPERIORES RESTAURADOS
     m_cols = st.columns(len(tickers))
     for i, t in enumerate(tickers):
         actual = df[t].iloc[-1]
         ytd = (actual / df[t].iloc[0] - 1) * 100
         m_cols[i].metric(t, f"${actual:.2f}", f"{ytd:.1f}% YTD")
 
-    # 2. PANELES DE ALTA PROFUNDIDAD
-    tab_m, tab_r, tab_opt, tab_sim = st.tabs([
-        "🌎 Desempeño Macro", "🛡️ Matriz de Riesgo", "🧬 Optimización Markowitz", "💰 Calculadora de Capital"
-    ])
+    tabs = st.tabs(["🌎 Macro & Ciclos", "🛡️ Riesgo & Correlación", "📈 Frontera de Markowitz", "💰 Calculadora & Proyección"])
 
-    with tab_m:
-        col1, col2 = st.columns([3, 2])
-        with col1:
+    with tabs[0]:
+        c1, c2, c3 = st.columns([2.5, 2, 2])
+        with c1:
             fig_p = go.Figure()
             for t in tickers:
                 norm = (df[t] / df[t].iloc[0]) * 100
-                fig_p.add_trace(go.Scatter(x=df.index, y=norm, name=t, line=dict(width=3)))
-            fig_p.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=600)
+                fig_p.add_trace(go.Scatter(x=df.index, y=norm, name=t))
             st.plotly_chart(fig_p, use_container_width=True)
-        with col2:
-            st.markdown(f"""<div class='analysis-panel'><div class='panel-title'>Análisis de Ciclo Económico</div><div class='panel-text'>
-            <b>Metodología:</b> Aplicamos normalización Base 100 (Precio_t / Precio_0 * 100). <br><br>
-            <b>Análisis Estratégico:</b> El rendimiento actual refleja una reconfiguración impulsada por la IA. Las empresas con mayor integración vertical capturan márgenes que antes se diluían. Se aconseja una postura de acumulación en activos con flujos de caja (FCF) crecientes.</div></div>""", unsafe_allow_html=True)
+        with c2:
+            st.markdown("""<div class='info-container'><div class='header-box'>🔬 Metodología de Normalización</div><div class='body-text'>
+            La <b>Normalización Base 100</b> es una herramienta fundamental en el análisis técnico comparativo. La fórmula aplicada es: <br>
+            <div class='formula-block'>P_norm = (P_actual / P_inicial) * 100</div>
+            Esto elimina el sesgo del precio nominal, permitiendo que una acción de $600 y una de $150 se midan bajo el mismo estándar de crecimiento porcentual. Sin este ajuste, la volatilidad de los activos más caros dominaría visualmente el gráfico, ocultando el rendimiento real de activos con precios más bajos pero mayor potencial de Alpha.</div></div>""", unsafe_allow_html=True)
+        with c3:
+            st.markdown("""<div class='info-container'><div class='header-box'>🧠 Análisis de Tendencia Sectorial</div><div class='body-text'>
+            El mercado de las Big Tech atraviesa una <b>reconfiguración estructural</b>. Observamos que el rendimiento no es uniforme; existe una divergencia clara entre las empresas que dominan la infraestructura de IA y aquellas que se centran en el consumo masivo. <br><br><b>Comparación Gerencial:</b> Mientras que los activos de hardware muestran una pendiente parabólica, el software de servicios se consolida lateralmente. Se recomienda una postura de acumulación en activos que demuestren flujos de caja libre (FCF) crecientes, ya que estos actúan como refugio ante la volatilidad de las tasas de interés y la incertidumbre macroeconómica global.</div></div>""", unsafe_allow_html=True)
 
-    with tab_r:
-        r_col1, r_col2 = st.columns([2.5, 2])
-        with r_col1:
-            # RESTAURACIÓN DE GRÁFICA DE RIESGOS (CORRELACIÓN)
-            corr = returns.corr()
-            fig_corr = px.imshow(corr, text_auto=".2f", color_continuous_scale='RdBu_r')
-            fig_corr.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=550)
+    with tabs[1]:
+        cr1, cr2, cr3 = st.columns([2.5, 2, 2])
+        with cr1:
+            fig_corr = px.imshow(returns.corr(), text_auto=".2f", color_continuous_scale='RdBu_r')
             st.plotly_chart(fig_corr, use_container_width=True)
-        with r_col2:
-            st.markdown(f"""<div class='analysis-panel'><div class='panel-title'>Ingeniería de Riesgo</div><div class='panel-text'>
-            <b>Parámetros:</b> Coeficiente de Pearson sobre retornos logarítmicos. <br><br>
-            <b>Briefing:</b> Una correlación superior a 0.70 indica que diversificar no ofrece protección real. Buscamos la mínima covarianza histórica para proteger el portafolio contra caídas sistémicas del sector tecnológico.</div></div>""", unsafe_allow_html=True)
+        with cr2:
+            st.markdown("""<div class='info-container'><div class='header-box'>📊 Teoría de Correlación</div><div class='body-text'>
+            Utilizamos el <b>Coeficiente de Correlación de Pearson</b> para medir la fuerza de la relación lineal entre pares de activos. La fórmula es: <br>
+            <div class='formula-block'>ρ = cov(X,Y) / (σX * σY)</div>
+            Un valor de 1.0 implica que los activos se mueven en perfecta armonía, mientras que valores cercanos a 0 indican independencia. En este set de Big Tech, las correlaciones suelen ser altas (>0.6), lo que dificulta la diversificación pura dentro de un mismo sector.</div></div>""", unsafe_allow_html=True)
+        with cr3:
+            st.markdown("""<div class='info-container'><div class='header-box'>🛡️ Gestión de Riesgos Sistémicos</div><div class='body-text'>
+            El análisis de riesgo busca identificar la <b>Mínima Covarianza Histórica</b>. Al entender qué activos no caen al mismo tiempo, podemos construir un portafolio que resista eventos de "cisne negro" en la industria. <br><br><b>Asimilación Técnica:</b> Si un activo presenta una correlación baja con el resto (como tradicionalmente MSFT o GOOGL en ciertos ciclos), se convierte en el ancla del portafolio. La meta no es eliminar el riesgo, sino gestionarlo para que una caída en un subsector (ej. semiconductores) sea compensada por la estabilidad en otro (ej. computación en la nube).</div></div>""", unsafe_allow_html=True)
 
-    with tab_opt:
-        o_col1, o_col2 = st.columns([2.5, 2.5])
-        def min_vol(w): return np.sqrt(np.dot(w.T, np.dot(returns.cov() * 252, w)))
-        res = minimize(min_vol, [1./len(tickers)]*len(tickers), method='SLSQP', bounds=tuple((0,1) for _ in range(len(tickers))), constraints={'type':'eq','fun':lambda x: np.sum(x)-1})
+    with tabs[2]:
+        co1, co2, co3 = st.columns([2.5, 2, 2])
         
-        # FIX DEFINITIVO PARA ETIQUETAS 0%
-        filtered_indices = [i for i, w in enumerate(res.x) if w > 0.01]
-        f_labels = [tickers[i] for i in filtered_indices]
-        f_values = [res.x[i] for i in filtered_indices]
-
-        with o_col1:
-            fig_o = go.Figure(data=[go.Pie(labels=f_labels, values=f_values, hole=.5, textinfo='percent+label')])
-            fig_o.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', height=550, showlegend=True)
-            st.plotly_chart(fig_o, use_container_width=True)
-        with o_col2:
-            lider = f_labels[np.argmax(f_values)]
-            st.markdown(f"""<div class='analysis-panel'><div class='panel-title'>Asignación Inteligente de Capital</div><div class='panel-text'>
-            <span class='methodology-tag'>MODELO MARKOWITZ</span><br>
-            Esta gráfica optimiza la relación riesgo-retorno mediante programación cuadrática. <br><br>
-            <b>Estrategia:</b> Para minimizar el riesgo, el algoritmo concentra la inversión en <b>{lider}</b>. Posee la mejor covarianza negativa frente al resto del set. Esta cartera preserva capital mientras captura el crecimiento tech.</div></div>""", unsafe_allow_html=True)
-
-    with tab_sim:
-        st.subheader("💰 Calculadora de Inversión y Proyección")
-        s_col1, s_col2 = st.columns([1, 2])
-        with s_col1:
-            monto = st.number_input("Capital a Invertir (USD)", min_value=1000, value=10000, step=1000)
-            st.markdown("---")
-            dist = pd.DataFrame({'Activo': f_labels, 'Monto Sugerido': [v * monto for v in f_values]})
-            st.table(dist.style.format({"Monto Sugerido": "${:,.2f}"}))
-        with s_col2:
-            st.markdown(f"""<div class='analysis-panel'><div class='panel-title'>Recomendación del Asesor</div><div class='panel-text'>
-            <b>Estrategia Sugerida:</b> Concentre su posición en <b>{lider}</b> debido a su estabilidad ante la volatilidad de las tasas de interés. <br><br>
-            <b>Consejos de Inversión:</b> <br>
-            1. No invierta todo de golpe; use entradas escalonadas. <br>
-            2. Mantenga un horizonte de mínimo 12 meses para que el interés compuesto actúe. <br>
-            3. Revise la correlación trimestralmente para ajustar los pesos.</div></div>""", unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.caption("Terminal Gerencial | Universidad Externado de Colombia | Dominick Vargas")
-
-except Exception as e:
-    st.error(f"Error en el sistema: {e}")
+        # Simulación Monte Carlo para Frontera Eficiente (LOS PUNTITOS)
+        results = []
+        for _ in range(1000):
+            w = np.random.random(len(tickers))
+            w /= np.sum(w)
+            ret = np.sum(returns.mean() * w) * 252
+            vol = np.sqrt(np.dot(w.T, np.dot(returns.cov() * 252, w)))
+            results.append([vol, ret])
+        f_df = pd.DataFrame(results, columns=['Volatilidad', 'Retorno'])
+        
+        with co1:
+            fig_f = px.scatter(f_df, x='Volatilidad', y='
