@@ -72,8 +72,7 @@ try:
     returns = df.pct_change().dropna()
     tickers = df.columns
 
-    # --- TÍTULO ACTUALIZADO ---
-    st.title("🏛️ ANÁLISIS ESTRATÉGICO DE ACCIONES BIG TECH")
+    st.title("🏛️ ALPHA STRATEGIC INTELLIGENCE - FINAL ADAPTIVE")
     st.markdown("---")
 
     # KPIs SUPERIORES
@@ -114,9 +113,10 @@ try:
             st.markdown("""<div class='info-panel'><div class='panel-header'>🛡️ Gestión de Riesgos Sistémicos</div><div class='panel-body'>
             La meta del administrador de riesgos es identificar la mínima covarianza histórica detectada. <br><br><b>Interpretación Gerencial:</b> Al entender qué activos no caen en sincronía, podemos construir un portafolio resiliente. Por ejemplo, la baja correlación relativa entre ciertos activos permite que uno actúe como amortiguador durante correcciones sectoriales. Ignorar estas relaciones resulta en una falsa sensación de diversificación donde todos los activos colapsan simultáneamente.</div></div>""", unsafe_allow_html=True)
 
-    # --- TAB 3: MARKOWITZ ---
+    # --- TAB 3: MARKOWITZ (LOS PUNTITOS) ---
     with tabs[2]:
         co1, co2, co3 = st.columns([3, 2, 2])
+        # Monte Carlo
         n_p = 1000
         p_vol = []
         p_ret = []
@@ -132,7 +132,7 @@ try:
             st.markdown("""<div class='info-panel'><div class='panel-header'>🧬 Teoría de Cartera de Markowitz</div><div class='panel-body'>
             La optimización de media-varianza busca el conjunto de carteras que maximizan el retorno esperado para un nivel de riesgo determinado. <br>
             <div class='formula-box'>$$\\text{Minimizar: } \\sigma_p^2 = \\mathbf{w}^T \\mathbf{\\Sigma} \\mathbf{w}$$</div>
-            Suerto a que la suma de pesos sea igual a 1. Cada punto en la gráfica representa una combinación posible de inversión. La curva superior es la Frontera Eficiente, donde se encuentran las decisiones racionales.</div></div>""", unsafe_allow_html=True)
+            Sujeto a que la suma de pesos sea igual a 1. Cada punto en la gráfica representa una combinación posible de inversión. La curva superior es la Frontera Eficiente, donde se encuentran las decisiones racionales.</div></div>""", unsafe_allow_html=True)
         with co3:
             st.markdown("""<div class='info-panel'><div class='panel-header'>🎯 Asimilación de Decisiones</div><div class='panel-body'>
             <b>Análisis de la Frontera:</b> Cualquier punto por debajo de la frontera es ineficiente, pues ofrece menos retorno por el mismo riesgo. <br><br><b>Acción Sugerida:</b> Nuestra terminal se enfoca en el punto de Variancia Mínima. En un entorno de alta incertidumbre, priorizamos la estabilidad sobre el retorno agresivo. Esta estrategia es ideal para inversores que buscan preservar capital manteniendo exposición al crecimiento tech.</div></div>""", unsafe_allow_html=True)
@@ -141,17 +141,26 @@ try:
     with tabs[3]:
         def min_v(w): return np.sqrt(np.dot(w.T, np.dot(returns.cov() * 252, w)))
         res = minimize(min_v, [1./len(tickers)]*len(tickers), method='SLSQP', bounds=tuple((0,1) for _ in range(len(tickers))), constraints={'type':'eq','fun':lambda x: np.sum(x)-1})
-        
-        # Mostramos todas las acciones del portafolio (tickers)
-        f_lab = list(tickers)
-        f_val = list(res.x)
+        f_idx = [i for i, w in enumerate(res.x) if w > 0.01]
+        f_lab = [tickers[i] for i in f_idx]
+        f_val = [res.x[i] for i in f_idx]
 
         sc1, sc2, sc3 = st.columns([2.5, 2, 2.5])
         with sc1:
             st.plotly_chart(go.Figure(data=[go.Pie(labels=f_lab, values=f_val, hole=.5)]), use_container_width=True)
         with sc2:
             monto = st.number_input("💵 Capital a Invertir (USD)", min_value=1000, value=10000)
-            # Tabla con las 7 acciones
             st.table(pd.DataFrame({'Activo': f_lab, 'Inversión': [v * monto for v in f_val]}).style.format({"Inversión": "${:,.2f}"}))
         with sc3:
-            st.markdown(f"""<div class='info-panel'><div class='panel-header'>💰 Recomendación Gerencial Final</div><div class='panel-body
+            st.markdown(f"""<div class='info-panel'><div class='panel-header'>💰 Recomendación Gerencial Final</div><div class='panel-body'>
+            El algoritmo sugiere una concentración principal en <b>{f_lab[np.argmax(f_val)]}</b>. <br><br>
+            <b>Estrategia de Ejecución:</b><br>
+            1. <b>Dollar Cost Averaging:</b> Divida su entrada en 4 tramos para mitigar riesgos.<br>
+            2. <b>Stop-Loss Estratégico:</b> Mantenga una salida activa si el portafolio retrocede más de un 15%.<br>
+            3. <b>Horizonte:</b> Este modelo está calibrado para una ventana mínima de 12-18 meses para permitir que el valor se materialice.</div></div>""", unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.caption("Terminal Gerencial | Universidad Externado de Colombia | Dominick Vargas")
+
+except Exception as e:
+    st.error(f"Fallo en el núcleo: {e}")
