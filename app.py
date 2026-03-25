@@ -6,10 +6,10 @@ import plotly.express as px
 from scipy.optimize import minimize
 import numpy as np
 
-# 1. CONFIGURACIÓN DEL SISTEMA
+# 1. CONFIGURACIÓN DEL SISTEMA GERENCIAL
 st.set_page_config(page_title="Terminal Gerencial Big Tech", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. CSS DINÁMICO (ADAPTABLE AL TEMA)
+# 2. CSS DINÁMICO: ADAPTABLE AL TEMA (PARA EVITAR PARCHES NEGROS)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
@@ -34,7 +34,12 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
-    .panel-body { font-family: 'Inter', sans-serif; line-height: 1.9; text-align: justify; font-size: 1.05rem; }
+    .panel-body {
+        font-family: 'Inter', sans-serif;
+        line-height: 1.9;
+        text-align: justify;
+        font-size: 1.05rem;
+    }
 
     .formula-box {
         background: rgba(0, 0, 0, 0.1);
@@ -63,11 +68,15 @@ def load_market_data():
 try:
     df = load_market_data()
     returns = df.pct_change().dropna()
-    tickers = df.columns
+    tickers = sorted(df.columns) # Ordenamos para consistencia
 
-    # --- NOMBRE CORREGIDO ---
+    # --- TÍTULO CORREGIDO ---
     st.title("🏛️ ANÁLISIS ESTRATÉGICO DE ACCIONES BIG TECH")
     st.markdown("---")
 
     # KPIs SUPERIORES
-    m_cols =
+    m_cols = st.columns(len(tickers))
+    for i, t in enumerate(tickers):
+        actual = df[t].iloc[-1]
+        ytd = (actual / df[t].iloc[0] - 1) * 100
+        m_
